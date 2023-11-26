@@ -1,0 +1,90 @@
+#+AUTHOR: lambdart
+#+EMAIL: lambdart@protonmail.com
+#+KEYWORDS: readme, emacs, elisp, autoloads, elisp, package
+#+LANGUAGE: en
+#+PROPERTY: header-args :tangle no
+#+OPTIONS: toc:nil
+
+* Introduction
+* Goal
+
+  Be a lightweight alternative to ~(elpy)~
+  following the *Emacs/Elisp* philosophy.
+
+* Version
+
+  - Alpha: 0.0.1
+
+* Dependencies
+
+  - comint
+  - python-mode (optional)
+
+* Tested on
+
+  | Emacs   | 27.1 | 28.0 |
+  | FreeBSD | 12.1 | 12.2 |
+  | OpenBSD |  6.8 |      |
+
+* Installation
+** Manually
+
+   Clone =Ipy= repository to an arbitrary location:
+
+   #+BEGIN_SRC sh
+
+       $ git clone https://github.com/lambdart/ipy ~/.emacs.d/site-elisp/ipy
+
+   #+END_SRC
+
+   Add =Ipy= directory to =load-path= in your
+   Emacs initialization file (~init.el~) and load it.
+
+   #+BEGIN_SRC emacs-lisp
+
+   ;; add to load-path
+   (add-to-list 'load-path "/replace/me/to/ipy/full/path")
+
+   ;; load ipy feature
+   (require 'ipy nil t)
+
+   #+END_SRC
+
+   - Note: For a more dynamic approach:
+     - =M-x load-file RET=
+     - =M-x load-library RET ipy RET=
+
+** Compile
+
+   * Note: Optional (recommended).
+
+   To compile the files to the =Elisp= byte-compiled representation:
+
+   #+BEGIN_SRC sh
+
+       [at-ipy-root-directory]$ gmake
+
+   #+END_SRC
+
+* Usage
+* Customize
+
+  * Note: To see all the options from =Emacs= directly, and to customize it,
+    just type: =M-x customize-group RET ipy RET=.
+
+* Commands
+* References
+* LICENSE
+  MIT
+* EOF
+
+  #+BEGIN_SRC
+  An idiot admires complexity, a genius admires simplicity, a physicist
+  tries to make it simple, for an idiot anything the more complicated it is
+  the more he will admire it, if you make something so clusterfucked he
+  can't understand it he's gonna think you're a god cause you made it so
+  complicated nobody can understand it. That's how they write journals in
+  Academics, they try to make it so complicated people think you're a
+  genius.
+  #+END_SRC
+  |Terry Davis|

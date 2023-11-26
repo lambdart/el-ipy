@@ -1,0 +1,50 @@
+;;; ipy-eval.el --- summary -*- lexical-binding: t -*-
+;;
+;; Author: lambdart <lambdart@protonmail.com>
+;; Maintainer: lambdart
+;; Homepage: https://github.com/lambdart/ipy
+;; Version: 0.0.1 Alpha
+;; Keywords:
+;;
+;; This file is NOT part of GNU Emacs.
+;;
+;;; MIT License
+;;
+;; Copyright (c) 2023 lambdart
+;;
+;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;; of this software and associated documentation files (the "Software"), to deal
+;; in the Software without restriction, including without limitation the rights
+;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;; copies of the Software, and to permit persons to whom the Software is
+;; furnished to do so, subject to the following conditions:
+;;
+;; The above copyright notice and this permission notice shall be included in
+;; all copies or substantial portions of the Software.
+;;
+;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+;; SOFTWARE.
+;;
+;;; Commentary:
+;;
+;;; Code:
+
+(require 'ipy-util)
+(require 'ipy-overlay)
+
+(defun ipy-eval-handler (output-buffer source-buffer)
+  "Get last line from OUTPUT-BUFFER and display it in the SOURCE-BUFFER.
+Overlay is the front end of choice."
+  (let ((output (ipy-util-last-line output-buffer "nil")))
+    (ipy-util-log output
+        (ipy-overlay-display source-buffer
+                              (concat " >>> " output)))))
+
+(provide 'ipy-eval)
+
+;;; ipy-eval.el ends here
