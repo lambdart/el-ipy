@@ -34,6 +34,35 @@
 ;;
 ;;; Code:
 
+;; from python.el
+(defconst ipy-op-eval-setup
+  "\
+def __PYTHON_EL_eval(source, filename):
+    import ast, sys
+    if sys.version_info[0] == 2:
+        from __builtin__ import compile, eval, globals
+    else:
+        from builtins import compile, eval, globals
+    try:
+        p, e = ast.parse(source, filename), None
+    except SyntaxError:
+        t, v, tb = sys.exc_info()
+        sys.excepthook(t, v, tb.tb_next)
+        return
+    if p.body and isinstance(p.body[-1], ast.Expr):
+        e = p.body.pop()
+    try:
+        g = globals()
+        exec(compile(p, filename, 'exec'), g, g)
+        if e:
+            return eval(compile(ast.Expression(e.value), filename, 'eval'), g, g)
+    except Exception:
+        t, v, tb = sys.exc_info()
+        sys.excepthook(t, v, tb.tb_next)"
+  "Code used to evaluate statements in inferior Python processes.")
+
+(defvar ipy-op-setups '(ipy-op-eval-setup))
+
 (defvar ipy-op-eldoc-fmt
   ""
   "Eldoc operation format.")
@@ -43,19 +72,19 @@
   "Return list all of available modules.")
 
 (defvar ipy-op-table
-  `((input          . (:cf "%s"))
-    (eval           . (:cf "%s"))
-    (eval-last-sexp . (:cb ipy-eval-handler :cf "%s" :wp t))
+  `((raw            . (:cf "%s"))
+    (eval           . (:cf "__PYTHON_EL_eval(%s, \"<string>\")" :pf t))
+    (eval-last-sexp . (:cb ipy-eval-handler
+                           :cf "__PYTHON_EL_eval(%s, \"<string>\")"
+                           :pf t
+                           :wp t))
     (doc            . (:cf ""))
     (find-doc       . (:cf ""))
     (run-tests      . (:cf ""))
     (eldoc          . (:cb ipy-eldoc-handler :cf ,ipy-op-eldoc-fmt))
     (apropos        . (:cb ipy-apropos-handler
                            :cf ""
-                           :wp t))
-    (source         . (:cf ""))
-    ;; (meta           . (:cf ""))
-    )
+                           :wp t)))
   "Operation associative list: (OP-KEY . (OP-PLIST))
 OP-KEY, the operation key selector.
 OP-PLIST, response handler, operation format string and
