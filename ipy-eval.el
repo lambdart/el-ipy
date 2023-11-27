@@ -43,7 +43,7 @@ Overlay is the front end of choice."
   (let ((output (ipy-util-last-line output-buffer "nil")))
     (ipy-util-log output
         (ipy-overlay-display source-buffer
-                              (concat " >>> " output)))))
+                             (concat " >>> " output)))))
 
 (provide 'ipy-eval)
 
