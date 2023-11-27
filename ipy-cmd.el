@@ -37,20 +37,11 @@
 (require 'ipy-proc)
 (require 'ipy-completion)
 
-(defun ipy-eval-defn ()
-  "Send definition to the Python comint process."
-  (interactive)
-  (save-excursion
-    (end-of-defun)
-    (let ((end (point)))
-      (beginning-of-defun)
-      (ipy-proc-send 'eval-last nil nil (point) end))))
-
 (defun ipy-eval-string (str)
   "Eval STR string, i.e, send it to Python comint process."
   (interactive (ipy-util-minibuffer-read 'word "String"))
   ;; eval string symbolic expression
-  (ipy-proc-send 'eval nil nil str))
+  (ipy-proc-send 'raw nil nil str))
 
 (defun ipy-eval-last-sexp ()
   "Send the previous sexp to the inferior process."
@@ -157,7 +148,7 @@
 (defun ipy-list-modules ()
   "List all modules."
   (interactive)
-  (ipy-proc-send 'ls-modules nil nil ""))
+  (ipy-proc-send 'ls-modules nil nil "help(\"modules\")"))
 
 (defun ipy-kill-output-buffers ()
   "Kill temporary output buffers."
