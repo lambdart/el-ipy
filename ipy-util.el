@@ -261,6 +261,12 @@ the load or compile."
          (y-or-n-p (format "Save buffer %s first? " (buffer-name buffer)))
          (with-current-buffer buffer (save-buffer)))))
 
+(defun ipy-util-encode-text (text)
+  "Encode TEXT as a valid Python string."
+  (if (stringp text)
+      (json-serialize text)
+    (signal 'wrong-type-argument (list 'stringp text))))
+
 (provide 'ipy-util)
 
 ;;; ipy-util.el ends here
