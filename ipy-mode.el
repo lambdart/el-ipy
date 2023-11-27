@@ -54,7 +54,8 @@
             ("C-c C-x" ipy-proc-restart-connection)
             ("C-c x"   ipy-proc-restart-connection)
             ("C-c C-r" ipy-eval-region)
-            ("C-c C-c" ipy-eval-buffer)
+            ("C-c C-c" ipy-eval-current-buffer)
+            ("C-c C-b" ipy-eval-buffer)
             ("C-c C-d" ipy-doc)
             ("C-c k"   ipy-kill-output-buffers)
             ("C-c C-k" ipy-kill-output-buffers)
@@ -64,7 +65,7 @@
             ("<f6>"    ipy-load-tests-and-run)
             ("C-c C-a" ipy-apropos)
             ("C-c C-l" ipy-load-file)
-            ("C-c C-b" ipy-eval-target-buffer)))
+            ("C-c C-b" ipy-eval-buffer)))
     map)
   "Python REPL commands (or operations) keymap.")
 
@@ -74,7 +75,7 @@
     "Ipy Minor Mode Menu"
     '("IPY"
       ["Eval region" ipy-eval-region t]
-      ["Eval buffer" ipy-eval-buffer t]
+      ["Eval buffer" ipy-eval-current-buffer t]
       ["Eval function" ipy-eval-defn t]
       ["Eval last sexp" ipy-eval-last-sexp t]
       "--"
