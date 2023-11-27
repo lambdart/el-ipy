@@ -63,25 +63,21 @@ def __PYTHON_EL_eval(source, filename):
 
 (defvar ipy-op-setups '(ipy-op-eval-setup))
 
-(defvar ipy-op-eldoc-fmt
-  ""
+(defvar ipy-op-eldoc ""
   "Eldoc operation format.")
-
-(defvar ipy-modules-list-fmf
-  ""
-  "Return list all of available modules.")
 
 (defvar ipy-op-table
   `((raw            . (:cf "%s"))
-    (eval           . (:cf "__PYTHON_EL_eval(%s, \"<string>\")" :pf t))
+    (eval           . (:cf "__PYTHON_EL_eval(%s, %s)" :pf t))
     (eval-last-sexp . (:cb ipy-eval-handler
-                           :cf "__PYTHON_EL_eval(%s, \"<string>\")"
+                           :cf "__PYTHON_EL_eval(%s, %s)"
                            :pf t
                            :wp t))
     (doc            . (:cf ""))
     (find-doc       . (:cf ""))
     (run-tests      . (:cf ""))
-    (eldoc          . (:cb ipy-eldoc-handler :cf ,ipy-op-eldoc-fmt))
+    (ls-modules     . (:cf "__PYTHON_EL_eval(%s, %s)" :pf t))
+    (eldoc          . (:cb ipy-eldoc-handler :cf ,ipy-op-eldoc))
     (apropos        . (:cb ipy-apropos-handler
                            :cf ""
                            :wp t)))
