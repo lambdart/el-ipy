@@ -53,23 +53,43 @@
 (defvar ipy-proc-stream-name
   " *ipy-proc-repl-stream*"
   "Default repl stream name.")
+
+(defvar ipy-proc-default-command "python")
+
 (defcustom ipy-proc-env '("")
   "Python process environment."
   :group 'ipy-mode
   :safe 'consp
   :type '(set string))
 
+(defcustom ipy-proc-virtualenv-root nil
+  "Path to virtualenv root.
+This variable, when set to a string, makes the environment to be
+modified such that shells are started within the specified
+virtualenv."
+  :group 'ipy-mode
+  :type '(choice (const nil) directory))
+
+(defun ipy-proc--environment ()
+  "Append the `ipy-proc-env' with `process-environment'."
+  (append ipy-proc-env process-environment))
+
 (defun ipy-proc--command ()
   "Return Python process command."
-  '("python"))
+  (list (if (not ipy-proc-virtualenv-root)
+            ipy-proc-default-command
+          (concat
+           (expand-file-name "bin/" ipy-proc-virtualenv-root)
+           ipy-proc-default-command))))
 
 (defun ipy-proc--open-stream ()
   "Create process repl stream."
-  (make-process :name "ipy-repl"
-                :buffer (get-buffer-create "*ipy-proc-output-log*")
-                :command (ipy-proc--command)
-                :coding nil
-                :connection-type 'pty))
+  (let ((process-environment (ipy-proc--environment)))
+    (make-process :name "ipy-repl"
+                  :buffer (get-buffer-create "*ipy-proc-output-log*")
+                  :command (ipy-proc--command)
+                  :coding nil
+                  :connection-type 'pty)))
 
 (defun ipy-proc--open-network-stream (host port)
   "Open network-stream using HOST/PORT."
@@ -90,7 +110,7 @@
 
 (defun ipy-proc--format-append-eoc (cmd)
   "Return CMD with end of command indicator."
-  (format "%s\r\nprint(%S)\r\n" cmd ipy-util-eoc))
+  (format "%s\r\nprint(%S)" cmd ipy-util-eoc))
 
 (defun ipy-proc--parse-json-input (input cmd-fmt)
   "Format INPUT (string or region) with CMD-FMT (command format)."
@@ -98,7 +118,9 @@
                    (apply 'buffer-substring-no-properties input)
                  (car input))))
     (ipy-proc--format-append-eoc
-     (format cmd-fmt (ipy-util-encode-text text)))))
+     (format cmd-fmt
+             (ipy-util-encode-text text)
+             (ipy-util-encode-text (or (buffer-file-name) "<string>"))))))
 
 (defun ipy-proc--parse-input (input cmd-fmt)
   "Format INPUT (string or region) with CMD-FMT (command format)."
