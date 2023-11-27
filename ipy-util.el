@@ -146,8 +146,8 @@ thing means."
       (buffer-substring-no-properties
        (progn
          (goto-char (point-max))
-         ;; our end of command (ipy-util-eoc) indicator has tree lines
-         (forward-line -4)
+         ;; our end of command (ipy-util-eoc) indicator 2 lines
+         (forward-line -2)
          ;; first line point
          (point))
        (progn
@@ -158,7 +158,10 @@ thing means."
   "Return the BUFFER last line determined by REGEXP pattern.
 DEFAULT, value to be returned if the last-line isn't found."
   (if (buffer-live-p buffer)
-      (ipy-util--last-line buffer)
+      (let ((line (ipy-util--last-line buffer)))
+        (if (string-match-p ipy-util-eoc line)
+            (or default "nil")
+          line))
     (or default "nil")))
 
 (defun ipy-util-delete-regexp (buffer regexp)
@@ -218,7 +221,7 @@ evaluated."
       ;; make the buffer read only
       (setq-local buffer-read-only t)
       ;; verifies if python-mode is available
-      (and (require 'python-mode nil t)
+      (and (require 'python nil t)
            (fboundp 'python-mode)
            (python-mode))
       ;; set our local map
