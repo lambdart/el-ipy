@@ -46,46 +46,46 @@
       (beginning-of-defun)
       (ipy-proc-send 'eval-last nil nil (point) end))))
 
-(defun ipy-eval-sexp (sexp)
-  "Eval SEXP string, i.e, send it to Python comint process."
-  (interactive (ipy-util-minibuffer-read 'sexp "Eval"))
+(defun ipy-eval-string (str)
+  "Eval STR string, i.e, send it to Python comint process."
+  (interactive (ipy-util-minibuffer-read 'word "String"))
   ;; eval string symbolic expression
-  (ipy-proc-send 'eval nil nil sexp))
+  (ipy-proc-send 'eval nil nil str))
 
 (defun ipy-eval-last-sexp ()
   "Send the previous sexp to the inferior process."
   (interactive)
   ;; send region of the last expression
   (ipy-proc-send 'eval-last-sexp
-                  nil
-                  t
-                  (save-excursion
-                    (backward-sexp)
-                    (point))
-                  (point)))
+                 nil
+                 t
+                 (save-excursion
+                   (backward-sexp)
+                   (point))
+                 (point)))
 
 (defun ipy-eval-region (beg end)
   "Eval BEG/END region."
   (interactive "r")
   (ipy-proc-send 'eval nil nil beg end))
 
-(defun ipy-eval-buffer ()
+(defun ipy-eval-current-buffer ()
   "Eval current buffer."
   (interactive)
   (save-excursion
     (widen)
     (let ((case-fold-search t))
       (ipy-proc-send 'eval
-                      nil
-                      nil
-                      (point-min)
-                      (point-max)))))
+                     nil
+                     nil
+                     (point-min)
+                     (point-max)))))
 
-(defun ipy-eval-target-buffer (buffer)
+(defun ipy-eval-buffer (buffer)
   "Eval target BUFFER."
   (interactive "bBuffer: ")
   (with-current-buffer buffer
-    (ipy-eval-buffer)))
+    (ipy-eval-current-buffer)))
 
 (defun ipy--eval-file-or-buffer (filename)
   "Copy FILENAME contents and eval the temporary buffer."
@@ -97,11 +97,11 @@
           ;; get or create the file buffer
           (let ((buffer (get-file-buffer fname)))
             (if buffer
-                (ipy-eval-target-buffer buffer)
+                (ipy-eval-buffer buffer)
               ;; insert buffer contents and call eval buffer operation
               (with-temp-buffer
                 (insert-file-contents-literally filename)
-                (ipy-eval-buffer)))
+                (ipy-eval-current-buffer)))
             ;; cache previous directory/filename
             (cons (file-name-directory fname)
                   (file-name-nondirectory fname))))))
@@ -137,10 +137,10 @@
       ipy-proc-tq
       ipy-completion-all-completions
     (ipy-proc-send 'doc
-                    nil
-                    nil
-                    (or input
-                        (completing-read "Doc: " ipy-completions)))))
+                   nil
+                   nil
+                   (or input
+                       (completing-read "Doc: " ipy-completions)))))
 
 (defun ipy-find-doc (input)
   "Find INPUT documentation ."
