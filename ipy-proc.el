@@ -53,12 +53,21 @@
 (defvar ipy-proc-stream-name
   " *ipy-proc-repl-stream*"
   "Default repl stream name.")
+(defcustom ipy-proc-env '("")
+  "Python process environment."
+  :group 'ipy-mode
+  :safe 'consp
+  :type '(set string))
+
+(defun ipy-proc--command ()
+  "Return Python process command."
+  '("python"))
 
 (defun ipy-proc--open-stream ()
   "Create process repl stream."
   (make-process :name "ipy-repl"
                 :buffer (get-buffer-create "*ipy-proc-output-log*")
-                :command '("python")
+                :command (ipy-proc--command)
                 :coding nil
                 :connection-type 'pty))
 
@@ -76,12 +85,20 @@
 (defun ipy-proc--default-handler (output-buffer &optional _)
   "Switch to OUTPUT-BUFFER (the process output buffer)."
   (save-mark-and-excursion
-    (and (buffer-live-p output-buffer)
-         (display-buffer output-buffer))))
+    (when (buffer-live-p output-buffer)
+      (display-buffer output-buffer))))
 
 (defun ipy-proc--format-append-eoc (cmd)
   "Return CMD with end of command indicator."
-  (format "%s\nprint(%S)\n" cmd ipy-util-eoc))
+  (format "%s\r\nprint(%S)\r\n" cmd ipy-util-eoc))
+
+(defun ipy-proc--parse-json-input (input cmd-fmt)
+  "Format INPUT (string or region) with CMD-FMT (command format)."
+  (let* ((text (if (not (stringp (car input)))
+                   (apply 'buffer-substring-no-properties input)
+                 (car input))))
+    (ipy-proc--format-append-eoc
+     (format cmd-fmt (ipy-util-encode-text text)))))
 
 (defun ipy-proc--parse-input (input cmd-fmt)
   "Format INPUT (string or region) with CMD-FMT (command format)."
@@ -115,11 +132,13 @@ INPUT, the string or the region bounds."
   (when (ipy-proc--ensure-connection)
     (ipy-tq-enqueue ipy-proc-tq
                     ;; parsed command plus input
-                    (let* ((cmd-fmt (ipy-op-table-get-property op-key :cf))
-                          (cmd-input (ipy-proc--parse-input input cmd-fmt)))
-                      (prog1 cmd-input
-                        (message cmd-input)))
-                      ;; (ipy-proc--parse-input input cmd-fmt))
+                    (let ((cmd-fmt (ipy-op-table-get-property op-key :cf))
+                          (cmd-pfn (ipy-op-table-get-property op-key :pf)))
+                      (apply #'funcall `(,(if cmd-pfn
+                                              'ipy-proc--parse-json-input
+                                            'ipy-proc--parse-input)
+                                         ,input
+                                         ,cmd-fmt)))
                     ;; wait predicate
                     (or waitp (ipy-op-table-get-property op-key :wp))
                     ;; callback handler
@@ -193,8 +212,10 @@ INPUT, the string or the region bounds."
     (:success
      (prog1 ipy-proc-tq
        (ipy-util-log "success: python process created!"
-           ;; run hooks
-           (run-hooks 'ipy-proc-hooks))))))
+           (dolist (op ipy-op-setups)
+             (ipy-proc-send 'raw nil nil (symbol-value op)))
+         ;; run hooks
+         (run-hooks 'ipy-proc-hooks))))))
 
 ;;;###autoload
 (defun ipy-proc-stop ()
