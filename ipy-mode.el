@@ -61,6 +61,8 @@
             ("C-c C-k" ipy-kill-output-buffers)
             ("C-c C-f" ipy-find-doc)
             ("C-c C-t" ipy-run-tests)
+            ("C-c p"   ipy-proc-restart)
+            ("C-c C-p" ipy-proc-restart)
             ("<f5>"    ipy-run-tests)
             ("<f6>"    ipy-load-tests-and-run)
             ("C-c C-a" ipy-apropos)
