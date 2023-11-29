@@ -34,6 +34,9 @@
 ;;
 ;;; Code:
 
+(defconst ipy-op-doc-setup
+  "import pydoc")
+
 ;; from python.el
 (defconst ipy-op-eval-setup
   "\
@@ -61,7 +64,8 @@ def __PYTHON_EL_eval(source, filename):
         sys.excepthook(t, v, tb.tb_next)"
   "Code used to evaluate statements in inferior Python processes.")
 
-(defvar ipy-op-setups '(ipy-op-eval-setup))
+(defvar ipy-op-setups '(ipy-op-doc-setup
+                        ipy-op-eval-setup))
 
 (defvar ipy-op-eldoc ""
   "Eldoc operation format.")
@@ -73,14 +77,18 @@ def __PYTHON_EL_eval(source, filename):
                            :cf "__PYTHON_EL_eval(%s, %s)"
                            :pf t
                            :wp t))
-    (doc            . (:cf ""))
+    (doc            . (:cf "%s"
+                           :cb ipy-doc-handler
+                           :wp t
+                           :pf nil))
     (find-doc       . (:cf ""))
     (run-tests      . (:cf ""))
     (ls-modules     . (:cf "__PYTHON_EL_eval(%s, %s)" :pf t))
     (eldoc          . (:cb ipy-eldoc-handler :cf ,ipy-op-eldoc))
     (apropos        . (:cb ipy-apropos-handler
-                           :cf ""
-                           :wp t)))
+                       :cf "%s"
+                       :wp t
+                       :pf nil)))
   "Operation associative list: (OP-KEY . (OP-PLIST))
 OP-KEY, the operation key selector.
 OP-PLIST, response handler, operation format string and
