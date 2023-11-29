@@ -123,15 +123,11 @@
 
 (defun ipy-doc (&optional input)
   "Describe identifier INPUT."
-  (interactive)
-  (ipy-tq-eval-after-handler
-      ipy-proc-tq
-      ipy-completion-all-completions
-    (ipy-proc-send 'doc
-                   nil
-                   nil
-                   (or input
-                       (completing-read "Doc: " ipy-completions)))))
+  (interactive (ipy-util-minibuffer-read 'word "Doc"))
+  (ipy-proc-send 'doc
+                 nil
+                 nil
+                 (format "pydoc.plain(pydoc.render_doc(%S))" input)))
 
 (defun ipy-find-doc (input)
   "Find INPUT documentation ."
@@ -143,7 +139,10 @@
   "Send apropos operation with the arbitrary INPUT."
   (interactive (ipy-util-minibuffer-read 'symbol "Apropos"))
   ;; send apropos command
-  (ipy-proc-send 'apropos nil nil input))
+  (ipy-proc-send 'apropos
+                 nil
+                 nil
+                 (format "pydoc.apropos(%S)" input)))
 
 (defun ipy-list-modules ()
   "List all modules."
@@ -156,7 +155,7 @@
   (let ((counter 0))
     (mapc (lambda (buffer)
             (when (string-match-p
-                   ipy-util-obn-regex
+                   ipy-util-buffer-name-regex
                    (buffer-name buffer))
               (setq counter (progn
                               (kill-buffer buffer)
@@ -164,7 +163,7 @@
           (buffer-list))
     ;; show message
     (and (> counter 0)
-         (message ipy-util-km-fmt counter))))
+         (message ipy-util-kill-buffer-msg-fmt counter))))
 
 (provide 'ipy-cmd)
 
