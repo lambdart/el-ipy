@@ -37,7 +37,7 @@
 (require 'button)
 (require 'ipy-util)
 
-(defvar ipy-apropos-buffer-name "*ipy-clojure-apropos*"
+(defvar ipy-apropos-buffer-name "*ipy-apropos-output*"
   "Apropos buffer name.")
 
 (defvar ipy-apropos-buffer nil
@@ -56,7 +56,7 @@
   'follow-link t
   'action (lambda (button)
             (and (fboundp 'ipy-doc)
-                 (funcall 'ipy-doc (button-get button 'symbol)))))
+                 (funcall 'ipy-doc (button-get button 'label)))))
 
 (defun ipy-apropos-buffer ()
   "Return apropos buffer."
@@ -64,33 +64,36 @@
         (or (and (buffer-live-p ipy-apropos-buffer)
                  ipy-apropos-buffer)
             (with-current-buffer (ipy-util-get-buffer-create
-                                  ipy-apropos-buffer-name)
+                                  ipy-apropos-buffer-name
+                                  nil)
               (setq-local buffer-read-only t)
               (current-buffer)))))
 
-(defun ipy-apropos-insert-button (symbol)
-  "Insert button with SYMBOL property."
-  (insert-button symbol 'symbol symbol :type 'ipy-apropos-button)
-  (insert "\n"))
+(defun ipy-apropos-insert-button (label documentation)
+  "Insert button with LABEL and DOCUMENTATION."
+  (insert-button label 'label label :type 'ipy-apropos-button)
+  (insert (format " -%s\n" (or documentation ""))))
 
 (defun ipy-apropos-collection (output)
   "Parse OUTPUT to a collection of string elements."
-  (split-string (substring-no-properties output 1 -2) " " t))
+  (and (stringp output)
+       (split-string output "[\n]")))
 
 (defun ipy-apropos-handler (output-buffer _)
   "Apropos OUTPUT-BUFFER operation handler."
   (ipy-util-with-buffer-content output-buffer t
-    (unless (string-empty-p content)
-      (save-excursion
-        (display-buffer
-         (let ((inhibit-read-only t))
-           (with-current-buffer (ipy-apropos-buffer)
-             (erase-buffer)
-             (mapc (lambda (symbol)
-                     (ipy-apropos-insert-button symbol))
-                   (ipy-apropos-collection content))
-             (goto-char (point-min))
-             (current-buffer))))))))
+    (save-excursion
+      (display-buffer
+       (let ((inhibit-read-only t))
+         (with-current-buffer (ipy-apropos-buffer)
+           (erase-buffer)
+           (mapc (lambda (string)
+                   (let ((item (split-string string "[-]")))
+                     (ipy-apropos-insert-button (string-trim (car-safe item))
+                                                (car-safe (cdr-safe item)))))
+                 (ipy-apropos-collection content))
+           (goto-char (point-min))
+           (current-buffer)))))))
 
 (provide 'ipy-apropos)
 
