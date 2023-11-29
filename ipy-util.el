@@ -43,10 +43,10 @@
 (defvar ipy-util-eoc "--IPY-EOC-INDICATOR--"
   "Default end of command indicator.")
 
-(defvar ipy-util-obn-regex "\\*ipy-proc-output\\*.*$"
-  "Default proc output buffer regex.")
+(defvar ipy-util-buffer-name-regex "\\*ipy-proc-output\\*.*$"
+  "Default output buffer regex.")
 
-(defvar ipy-util-km-fmt
+(defvar ipy-util-kill-buffer-msg-fmt
   "[IPY]: %d buffers were killed!"
   "Default kill message format.")
 
@@ -200,7 +200,10 @@ evaluated."
            (debug t))
   `(let ((content (ipy-util-buffer-content ,buffer ipy-util-eoc)))
      (and ,cleanp (kill-buffer ,buffer))
-     ,@body))
+     (unless (or (eq content nil)
+                 (not (stringp content))
+                 (string-empty-p content))
+       ,@body)))
 
 (defvar ipy-util-local-keymap
   (let ((keymap (make-sparse-keymap)))
@@ -212,8 +215,10 @@ evaluated."
     keymap)
   "Auxiliary keymap to provide quick-access to some useful commands.")
 
-(defun ipy-util-get-buffer-create (buffer-or-name)
-  "Get or create redirect buffer using the specify BUFFER-OR-NAME."
+(defun ipy-util-get-buffer-create (buffer-or-name &optional activate-mode-p)
+  "Get or create redirect buffer using the specify BUFFER-OR-NAME.
+IF ACTIVATE-MODE-P is non-nill `python-mode' will be the major
+mode of the buffer."
   (if (and (bufferp buffer-or-name)
            (buffer-live-p buffer-or-name))
       buffer-or-name
@@ -221,7 +226,8 @@ evaluated."
       ;; make the buffer read only
       (setq-local buffer-read-only t)
       ;; verifies if python-mode is available
-      (and (require 'python nil t)
+      (and activate-mode-p
+           (require 'python nil t)
            (fboundp 'python-mode)
            (python-mode))
       ;; set our local map
