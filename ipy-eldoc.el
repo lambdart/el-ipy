@@ -41,6 +41,12 @@
 (eval-when-compile
   (require 'ipy-util))
 
+(defvar ipy-doc-buffer nil
+  "Documentation temporary buffer.")
+
+(defvar ipy-doc-buffer-name "*ipy-doc-output*"
+  "Documentation buffer name.")
+
 (defvar ipy-eldoc-thing ""
   "Cache eldoc thing at point.")
 
@@ -117,8 +123,8 @@ Each hook function is called with at least one argument CALLBACK,
 a function, and decides whether to display a doc short string
 about the context around point."
   (setq ipy-eldoc-callback (or (and (functionp callback)
-                                     callback)
-                                (lambda (&rest _) nil))
+                                    callback)
+                               (lambda (&rest _) nil))
         ipy-eldoc-thing
         (ipy-tq-with-live-process ipy-proc-tq
           (let ((thing (ipy-eldoc-fnsym)))
@@ -148,6 +154,37 @@ about the context around point."
   "Disable eldoc operation."
   (interactive)
   (remove-hook 'eldoc-documentation-functions #'ipy-eldoc-function t))
+
+(defun ipy-doc-buffer ()
+  "Return apropos buffer."
+  (setq ipy-doc-buffer
+        (or (and (buffer-live-p ipy-doc-buffer)
+                 ipy-doc-buffer)
+            (with-current-buffer (ipy-util-get-buffer-create
+                                  ipy-doc-buffer-name
+                                  nil)
+              (setq-local buffer-read-only t)
+              (current-buffer)))))
+
+(defun ipy-doc-handler (output-buffer _)
+  "Handler documentation OUTPUT-BUFFER to proper display it."
+  (ipy-util-with-buffer-content output-buffer t
+    (save-excursion
+      (display-buffer
+       (let ((inhibit-read-only t))
+         (with-current-buffer (ipy-doc-buffer)
+           (erase-buffer)
+           (insert
+            (dolist (re '(("\\\\n" "\n")
+                          ("^'" "")
+                          ("\\\\'" "'")
+                          ("^\"" "")))
+              (setq content
+                    (replace-regexp-in-string (car re)
+                                              (cadr re)
+                                              content))))
+           (goto-char (point-min))
+           (current-buffer)))))))
 
 (provide 'ipy-eldoc)
 
