@@ -43,16 +43,12 @@
 
 (defvar ipy-mode-map
   (let ((map (make-sparse-keymap)))
-    (mapc (lambda (seq)
+    (mapc (lambda (pair)
             (apply 'define-key
                    map
-                   (kbd (car seq))
-                   (cdr seq)))
-          `(("C-M-x"   ipy-eval-defn) ; Gnu convention
-            ("C-c C-e" ipy-eval-last-sexp)
-            ("C-x C-e" ipy-eval-last-sexp)  ; Gnu convention
-            ("C-c C-x" ipy-proc-restart-connection)
-            ("C-c x"   ipy-proc-restart-connection)
+                   (kbd (car pair))
+                   (cdr pair)))
+          `(("C-c C-e" ipy-eval-last-sexp)
             ("C-c C-r" ipy-eval-region)
             ("C-c C-c" ipy-eval-current-buffer)
             ("C-c C-b" ipy-eval-buffer)
@@ -63,11 +59,14 @@
             ("C-c C-t" ipy-run-tests)
             ("C-c p"   ipy-proc-restart)
             ("C-c C-p" ipy-proc-restart)
+            ("C-c x"   ipy-proc-restart-connection)
+            ("C-c C-x" ipy-proc-restart-connection)
             ("<f5>"    ipy-run-tests)
             ("<f6>"    ipy-load-tests-and-run)
+            ("C-c a"   ipy-apropos)
             ("C-c C-a" ipy-apropos)
-            ("C-c C-l" ipy-load-file)
-            ("C-c C-b" ipy-eval-buffer)))
+            ("C-c l"   ipy-load-file)
+            ("C-c C-l" ipy-load-file)))
     map)
   "Python REPL commands (or operations) keymap.")
 
