@@ -146,8 +146,8 @@ thing means."
       (buffer-substring-no-properties
        (progn
          (goto-char (point-max))
-         ;; our end of command (ipy-util-eoc) indicator 2 lines
-         (forward-line -2)
+         ;; our end of command (ipy-util-eoc) indicator 3 lines
+         (forward-line -3)
          ;; first line point
          (point))
        (progn
@@ -160,9 +160,9 @@ DEFAULT, value to be returned if the last-line isn't found."
   (if (buffer-live-p buffer)
       (let ((line (ipy-util--last-line buffer)))
         (if (string-match-p ipy-util-eoc line)
-            (or default "nil")
+            (or default "None")
           line))
-    (or default "nil")))
+    (or default "None")))
 
 (defun ipy-util-delete-regexp (buffer regexp)
   "Delete output BUFFER using REGEXP backward search."
@@ -200,10 +200,7 @@ evaluated."
            (debug t))
   `(let ((content (ipy-util-buffer-content ,buffer ipy-util-eoc)))
      (and ,cleanp (kill-buffer ,buffer))
-     (unless (or (eq content nil)
-                 (not (stringp content))
-                 (string-empty-p content))
-       ,@body)))
+     ,@body))
 
 (defvar ipy-util-local-keymap
   (let ((keymap (make-sparse-keymap)))
