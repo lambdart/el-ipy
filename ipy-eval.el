@@ -40,7 +40,7 @@
 (defun ipy-eval-handler (output-buffer source-buffer)
   "Get last line from OUTPUT-BUFFER and display it in the SOURCE-BUFFER.
 Overlay is the front end of choice."
-  (let ((output (ipy-util-last-line output-buffer "nil")))
+  (let ((output (ipy-util-last-line output-buffer "None")))
     (ipy-util-log output
         (ipy-overlay-display source-buffer
                              (concat " >>> " output)))))
