@@ -128,10 +128,10 @@ Buffer: process output buffer."
                      (ipy-tq-queue-head-temp-buffer tq) temp)
                     ;; verifies if end of command was found
                     (ipy-util-with-log "process: end of command!" nil
-                                       (string-match-p (ipy-tq-proc-eoc tq) temp))))
+                      (string-match-p (ipy-tq-proc-eoc tq) temp))))
             `((lambda (tq)
-                (and (ipy-tq-queue-head-waitp tq)
-                     (ipy-tq-call-handler tq)))
+                (when (ipy-tq-queue-head-waitp tq)
+                  (ipy-tq-call-handler tq)))
               ipy-tq-queue-pop)
           '())))
 
@@ -206,7 +206,6 @@ to the TQ head."
 
 (defun ipy-tq-queue-head-kill-temp-buffer (tq)
   "Kill temporary output buffer if TQ queue head waitp is non-nil."
-  ;;nil)
   (when (ipy-tq-queue-head-waitp tq)
     (kill-buffer (ipy-tq-queue-head-temp-buffer tq))))
 
@@ -221,9 +220,10 @@ to the TQ head."
   (mapc (lambda (fn)
           (and tq (funcall fn tq)))
         `(ipy-tq-queue-head-kill-temp-buffer
-          ipy-tq-queue-head-clean-temp-buffer
+          ;; ipy-tq-queue-head-clean-temp-buffer
           (lambda (tq)
             (setcar tq (cdr (car tq))))
+          ;; send the next from the queue
           (lambda (tq)
             (or (ipy-tq-queue-empty-p tq)
                 (ipy-tq-proc-send-input tq))))))
@@ -254,7 +254,7 @@ This produces more reliable results with some processes."
                     handler
                     orig-buffer
                     (ipy-util-get-buffer-create
-                     (generate-new-buffer-name "*ipy-proc-output*")))
+                     (generate-new-buffer-name "*ipy-proc-output*") t))
   ;; send queue to process
   (and (or (not delay)
            (not (ipy-tq-queue tq))))
@@ -269,7 +269,7 @@ This produces more reliable results with some processes."
 This function always returns nil."
   (prog1 nil
     (ipy-util-with-log "process deleted" t
-                       (delete-process (ipy-tq-proc tq)))))
+      (delete-process (ipy-tq-proc tq)))))
 
 (defun ipy-tq-make (process process-eoc &optional prompt-regexp)
   "Set PROCESS filter and return the transaction queue.
