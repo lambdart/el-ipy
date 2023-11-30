@@ -158,33 +158,40 @@ about the context around point."
 (defun ipy-doc-buffer ()
   "Return apropos buffer."
   (setq ipy-doc-buffer
-        (or (and (buffer-live-p ipy-doc-buffer)
-                 ipy-doc-buffer)
+        (or (and (buffer-live-p ipy-doc-buffer) ipy-doc-buffer)
             (with-current-buffer (ipy-util-get-buffer-create
                                   ipy-doc-buffer-name
                                   nil)
               (setq-local buffer-read-only t)
               (current-buffer)))))
 
+(defun ipy-doc-parse-content (content)
+  "Parse documentation CONTENT output."
+  (let ((output content)
+        (re '(("\\\\n" "\n")
+              ("^'" "")
+              ("\\\\'" "'")
+              ("^\"" ""))))
+    (while (not (equal re ()))
+      (setq output
+            (replace-regexp-in-string (car (car re))
+                                      (cadr (car re))
+                                      output)
+            re (cdr re)))
+    ;; return the parsed output
+    output))
+
 (defun ipy-doc-handler (output-buffer _)
   "Handler documentation OUTPUT-BUFFER to proper display it."
-  (ipy-util-with-buffer-content output-buffer t
-    (save-excursion
-      (display-buffer
-       (let ((inhibit-read-only t))
-         (with-current-buffer (ipy-doc-buffer)
-           (erase-buffer)
-           (insert
-            (dolist (re '(("\\\\n" "\n")
-                          ("^'" "")
-                          ("\\\\'" "'")
-                          ("^\"" "")))
-              (setq content
-                    (replace-regexp-in-string (car re)
-                                              (cadr re)
-                                              content))))
-           (goto-char (point-min))
-           (current-buffer)))))))
+  (save-mark-and-excursion
+    (let ((inhibit-read-only t)
+          (buffer (ipy-doc-buffer)))
+      (display-buffer buffer)
+      (ipy-util-with-buffer-content output-buffer t
+        (with-current-buffer buffer
+          (erase-buffer)
+          (insert (ipy-doc-parse-content content))
+          (goto-char (point-min)))))))
 
 (provide 'ipy-eldoc)
 
