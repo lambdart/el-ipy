@@ -69,10 +69,18 @@
               (setq-local buffer-read-only t)
               (current-buffer)))))
 
-(defun ipy-apropos-insert-button (label documentation)
-  "Insert button with LABEL and DOCUMENTATION."
-  (insert-button label 'label label :type 'ipy-apropos-button)
-  (insert (format " -%s\n" (or documentation ""))))
+(defun ipy-apropos-insert-button (label doc)
+  x"Insert button with LABEL and DOC."
+  (unless (or (not (stringp label))
+              (string-empty-p label))
+    (mapc (lambda (f)
+            (apply #'funcall f `(,label ,doc)))
+          ;; insert button
+          `((lambda (label _)
+              (insert-button label 'label label :type 'ipy-apropos-button))
+            ;; insert documentation
+            (lambda (_ doc)
+              (insert (format "\nDoc:%s\n\n" (or doc ""))))))))
 
 (defun ipy-apropos-collection (output)
   "Parse OUTPUT to a collection of string elements."
@@ -81,19 +89,19 @@
 
 (defun ipy-apropos-handler (output-buffer _)
   "Apropos OUTPUT-BUFFER operation handler."
-  (ipy-util-with-buffer-content output-buffer t
-    (save-excursion
-      (display-buffer
-       (let ((inhibit-read-only t))
-         (with-current-buffer (ipy-apropos-buffer)
-           (erase-buffer)
-           (mapc (lambda (string)
-                   (let ((item (split-string string "[-]")))
-                     (ipy-apropos-insert-button (string-trim (car-safe item))
-                                                (car-safe (cdr-safe item)))))
-                 (ipy-apropos-collection content))
-           (goto-char (point-min))
-           (current-buffer)))))))
+  (save-mark-and-excursion
+    (let ((inhibit-read-only t)
+          (buffer (ipy-apropos-buffer)))
+      (display-buffer buffer)
+      (ipy-util-with-buffer-content output-buffer t
+        (with-current-buffer buffer
+          (erase-buffer)
+          (mapc (lambda (string)
+                  (let ((item (split-string string "[-]")))
+                    (ipy-apropos-insert-button (string-trim (car-safe item))
+                                               (car-safe (cdr-safe item)))))
+                (ipy-apropos-collection content))
+          (goto-char (point-min)))))))
 
 (provide 'ipy-apropos)
 
