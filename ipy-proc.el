@@ -58,9 +58,9 @@
 
 (defcustom ipy-proc-env '("")
   "Python process environment."
-  :group 'ipy-mode
   :safe 'consp
-  :type '(set string))
+  :type '(set string)
+  :group 'ipy-mode)
 
 (defcustom ipy-proc-virtualenv-root nil
   "Path to virtualenv root.
@@ -70,9 +70,10 @@ virtualenv."
   :group 'ipy-mode
   :type '(choice (const nil) directory))
 
-(defun ipy-proc--environment ()
-  "Append the `ipy-proc-env' with `process-environment'."
-  (append ipy-proc-env process-environment))
+(defun ipy-proc--environment (python-path)
+  "Append the `ipy-proc-env' and PYTHON-PATH to `process-environment'."
+  (let ((env-python-path `(,(format "PYTHONPATH=%s" python-path))))
+    (append ipy-proc-env env-python-path process-environment)))
 
 (defun ipy-proc--command ()
   "Return Python process command."
@@ -82,9 +83,9 @@ virtualenv."
            (expand-file-name "bin/" ipy-proc-virtualenv-root)
            ipy-proc-default-command))))
 
-(defun ipy-proc--open-stream ()
+(defun ipy-proc--open-stream (&optional python-path)
   "Create process repl stream."
-  (let ((process-environment (ipy-proc--environment)))
+  (let ((process-environment (ipy-proc--environment (or python-path ""))))
     (make-process :name "ipy-repl"
                   :buffer (get-buffer-create "*ipy-proc-output-log*")
                   :command (ipy-proc--command)
@@ -110,7 +111,7 @@ virtualenv."
 
 (defun ipy-proc--format-append-eoc (cmd)
   "Return CMD with end of command indicator."
-  (format "%s\r\nprint(%S)" cmd ipy-util-eoc))
+  (format "%s\r\nprint(\'\')\r\nprint(%S)" cmd ipy-util-eoc))
 
 (defun ipy-proc--parse-json-input (input cmd-fmt)
   "Format INPUT (string or region) with CMD-FMT (command format)."
@@ -220,12 +221,14 @@ INPUT, the string or the region bounds."
       (ipy-proc-connect host port))))
 
 ;;;###autoload
-(defun ipy-proc-start ()
+(defun ipy-proc-start (python-path)
   "Run Python process."
-  (interactive)
+  (interactive
+   (list (expand-file-name
+          (read-directory-name "Dir: " nil nil t))))
   (condition-case err
       (setq ipy-proc-tq
-            (ipy-tq-make (ipy-proc--open-stream)
+            (ipy-tq-make (ipy-proc--open-stream python-path)
                          ipy-util-eoc
                          ipy-proc-prompt-regexp))
     ;; handle errors
@@ -234,8 +237,8 @@ INPUT, the string or the region bounds."
     (:success
      (prog1 ipy-proc-tq
        (ipy-util-log "success: python process created!"
-           (dolist (op ipy-op-setups)
-             (ipy-proc-send 'raw nil nil (symbol-value op)))
+           (dolist (code ipy-op-code-setup)
+             (ipy-proc-send 'raw nil nil (symbol-value code)))
          ;; run hooks
          (run-hooks 'ipy-proc-hooks))))))
 
@@ -244,10 +247,10 @@ INPUT, the string or the region bounds."
   "Stop from transmission queue."
   (interactive)
   (setq ipy-proc-tq
-        (prog1
-            ;; erase if necessary
-            (and ipy-proc-tq
-                 (ipy-tq-proc-delete ipy-proc-tq)))))
+        (prog1 nil
+          ;; erase if necessary
+          (and ipy-proc-tq
+               (ipy-tq-proc-delete ipy-proc-tq)))))
 
 ;;;###autoload
 (defun ipy-proc-restart ()
