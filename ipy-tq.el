@@ -154,13 +154,14 @@ to the TQ head."
 
 (defun ipy-tq-wait--proc-loop (tq)
   "Wait TQ process output loop."
-  (with-local-quit
-    (let ((proc (ipy-tq-proc tq)))
-      (and (process-live-p proc)
-           ;; TODO: add timeout here
-           (while (and (null ipy-tq-proc-eoc-found)
-                       (accept-process-output proc 1 0 t))
-             (sleep-for 0.01))))))
+  (let ((inhibit-quit nil))
+    (with-local-quit
+      (let ((proc (ipy-tq-proc tq)))
+        (and (process-live-p proc)
+             ;; TODO: add timeout here
+             (while (and (null ipy-tq-proc-eoc-found)
+                         (accept-process-output proc 1 0 t))
+               (sleep-for 0.01)))))))
 
 (defmacro ipy-tq-wait-proc-output (tq &rest body)
   "Evaluate BODY forms and force waiting for TQ process output confirmation."
