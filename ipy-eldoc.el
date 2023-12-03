@@ -183,7 +183,7 @@ about the context around point."
 
 (defun ipy-doc-handler (output-buffer _)
   "Handler documentation OUTPUT-BUFFER to proper display it."
-  (save-mark-and-excursion
+  (save-excursion
     (let ((inhibit-read-only t)
           (buffer (ipy-doc-buffer)))
       (display-buffer buffer)
