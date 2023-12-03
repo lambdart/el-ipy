@@ -70,6 +70,8 @@ virtualenv."
   :group 'ipy-mode
   :type '(choice (const nil) directory))
 
+(defvar ipy-proc-python-path nil)
+
 (defun ipy-proc--environment (python-path)
   "Append the `ipy-proc-env' and PYTHON-PATH to `process-environment'."
   (let ((env-python-path `(,(format "PYTHONPATH=%s" python-path))))
@@ -221,26 +223,30 @@ INPUT, the string or the region bounds."
       (ipy-proc-connect host port))))
 
 ;;;###autoload
-(defun ipy-proc-start (python-path)
-  "Run Python process."
-  (interactive
-   (list (expand-file-name
-          (read-directory-name "Dir: " nil nil t))))
-  (condition-case err
-      (setq ipy-proc-tq
-            (ipy-tq-make (ipy-proc--open-stream python-path)
-                         ipy-util-eoc
-                         ipy-proc-prompt-regexp))
-    ;; handle errors
-    (error (ipy-util-log (concat "error: " (cadr err)) nil))
-    ;; handle success
-    (:success
-     (prog1 ipy-proc-tq
-       (ipy-util-log "success: python process created!"
-           (dolist (code ipy-op-code-setup)
-             (ipy-proc-send 'raw nil nil (symbol-value code)))
-         ;; run hooks
-         (run-hooks 'ipy-proc-hooks))))))
+(defun ipy-proc-start (&optional python-path)
+  "Run Python process and cache PYTHON-PATH."
+  (interactive)
+  (let ((python-path (or python-path
+                         (expand-file-name
+                          (read-directory-name "Dir: " nil nil t)))))
+    ;; cache python-path
+    (setq ipy-proc-python-path python-path)
+    ;; tries to start the process
+    (condition-case err
+        (setq ipy-proc-tq
+              (ipy-tq-make (ipy-proc--open-stream python-path)
+                           ipy-util-eoc
+                           ipy-proc-prompt-regexp))
+      ;; handle errors
+      (error (ipy-util-log (concat "error: " (cadr err)) nil))
+      ;; handle success
+      (:success
+       (prog1 ipy-proc-tq
+         (ipy-util-log "success: python process created!"
+             (dolist (code ipy-op-code-setup)
+               (ipy-proc-send 'raw nil nil (symbol-value code)))
+           ;; run hooks
+           (run-hooks 'ipy-proc-hooks)))))))
 
 ;;;###autoload
 (defun ipy-proc-stop ()
@@ -258,7 +264,8 @@ INPUT, the string or the region bounds."
   (interactive)
   (mapc #'funcall
         '(ipy-proc-stop
-          ipy-proc-start)))
+          (lambda()
+            (ipy-proc-start ipy-proc-python-path)))))
 
 (defun ipy-proc-tq-pop ()
   "Pop queue."
