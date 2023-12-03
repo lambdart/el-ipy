@@ -70,36 +70,31 @@
               (current-buffer)))))
 
 (defun ipy-apropos-insert-button (label doc)
-  x"Insert button with LABEL and DOC."
-  (unless (or (not (stringp label))
-              (string-empty-p label))
-    (mapc (lambda (f)
-            (apply #'funcall f `(,label ,doc)))
-          ;; insert button
-          `((lambda (label _)
-              (insert-button label 'label label :type 'ipy-apropos-button))
-            ;; insert documentation
-            (lambda (_ doc)
-              (insert (format "\nDoc:%s\n\n" (or doc ""))))))))
+  "Insert button with LABEL and DOC."
+  (when (and (stringp label)
+             (not (string-empty-p label)))
+    (prog1 nil
+      (insert-button label 'label label :type 'ipy-apropos-button)
+      (insert (format "\nDoc:%s\n\n" (or doc ""))))))
 
 (defun ipy-apropos-collection (output)
   "Parse OUTPUT to a collection of string elements."
   (and (stringp output)
-       (split-string output "[\n]")))
+       (sort (split-string output "[\n]") #'string<)))
 
 (defun ipy-apropos-handler (output-buffer _)
   "Apropos OUTPUT-BUFFER operation handler."
-  (save-mark-and-excursion
+  (save-excursion
     (let ((inhibit-read-only t)
           (buffer (ipy-apropos-buffer)))
       (display-buffer buffer)
       (ipy-util-with-buffer-content output-buffer t
         (with-current-buffer buffer
           (erase-buffer)
-          (mapc (lambda (string)
-                  (let ((item (split-string string "[-]")))
-                    (ipy-apropos-insert-button (string-trim (car-safe item))
-                                               (car-safe (cdr-safe item)))))
+          (mapc (lambda (intput)
+                  (let ((item (split-string intput "[-]")))
+                    (ipy-apropos-insert-button (string-trim (car item))
+                                               (cadr item))))
                 (ipy-apropos-collection content))
           (goto-char (point-min)))))))
 
