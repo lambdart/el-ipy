@@ -64,9 +64,60 @@ def __PYTHON_EL_eval(source, filename):
         sys.excepthook(t, v, tb.tb_next)"
   "Code used to evaluate statements in inferior Python processes.")
 
+(defconst ipy-op-completion-setup
+  "\
+def __PYTHON_EL_get_completions(text):
+    completions = []
+    completer = None
+    try:
+        import readline
+        try:
+            import __builtin__
+        except ImportError:
+            # Python 3
+            import builtins as __builtin__
+        builtins = dir(__builtin__)
+
+        is_ipython = ('__IPYTHON__' in builtins or
+                      '__IPYTHON__active' in builtins)
+        splits = text.split()
+        is_module = splits and splits[0] in ('from', 'import')
+
+        if is_ipython and is_module:
+            from IPython.core.completerlib import module_completion
+            completions = module_completion(text.strip())
+        elif is_ipython and '__IP' in builtins:
+            completions = __IP.complete(text)
+        elif is_ipython and 'get_ipython' in builtins:
+            completions = get_ipython().Completer.all_completions(text)
+        else:
+            # Try to reuse current completer.
+            completer = readline.get_completer()
+            if not completer:
+                # importing rlcompleter sets the completer, use it as a
+                # last resort to avoid breaking customizations.
+                import rlcompleter
+                completer = readline.get_completer()
+            if getattr(completer, 'PYTHON_EL_WRAPPED', False):
+                completer.print_mode = False
+            i = 0
+            while True:
+                completion = completer(text, i)
+                if not completion:
+                    break
+                i += 1
+                completions.append(completion)
+    except:
+        pass
+    finally:
+        if getattr(completer, 'PYTHON_EL_WRAPPED', False):
+            completer.print_mode = True
+    return completions"
+  "Code used to setup completion in inferior Python processes.")
+
 (defvar ipy-op-code-setup
   '(ipy-op-doc-setup
-    ipy-op-eval-setup))
+    ipy-op-completion-setup))
 
 (defvar ipy-op-eldoc ""
   "Eldoc operation format.")
@@ -74,20 +125,14 @@ def __PYTHON_EL_eval(source, filename):
 (defvar ipy-op-table
   `((raw            . (:cf "%s"))
     (eval           . (:cf "__PYTHON_EL_eval(%s, %s)" :pf t))
-    (eval-last-sexp . (:cb ipy-eval-handler
-                       :cf "__PYTHON_EL_eval(%s, %s)"
-                       :pf t
-                       :wp t))
-    (doc            . (:cb ipy-doc-handler
-                       :cf "%s"
-                       :wp t))
+    (eval-last-sexp . (:cb ipy-eval-handler :cf "__PYTHON_EL_eval(%s, %s)" :pf t :wp t))
+    (doc            . (:cb ipy-doc-handler :cf "%s" :wp t))
     (find-doc       . (:cf ""))
     (run-tests      . (:cf ""))
     (ls-modules     . (:cf "__PYTHON_EL_eval(%s, %s)" :pf t))
     (eldoc          . (:cb ipy-eldoc-handler :cf ,ipy-op-eldoc))
-    (apropos        . (:cb ipy-apropos-handler
-                           :cf "%s"
-                           :wp t)))
+    (apropos        . (:cb ipy-apropos-handler :cf "%s" :wp t))
+    (complete       . (:cb ipy-completion-handler :cf "__PYTHON_EL_get_completions(%S)" :wp t)))
   "Operation associative list: (OP-KEY . (OP-PLIST))
 OP-KEY, the operation key selector.
 OP-PLIST, response handler, operation format string and
