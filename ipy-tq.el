@@ -130,8 +130,8 @@ Buffer: process output buffer."
                     (ipy-util-with-log "process: end of command!" nil
                       (string-match-p (ipy-tq-proc-eoc tq) temp))))
             `((lambda (tq)
-                (when (ipy-tq-queue-head-waitp tq)
-                  (ipy-tq-call-handler tq)))
+                (and (ipy-tq-queue-head-waitp tq)
+                     (ipy-tq-call-handler tq)))
               ipy-tq-queue-pop)
           '())))
 
@@ -198,12 +198,11 @@ to the TQ head."
 
 (defun ipy-tq-proc-send-input (tq)
   "Send TQ input using the correct process-send function."
-  (and (ipy-tq--proc-send-input
-        (ipy-tq-proc tq)
-        (ipy-tq-queue-head-input tq))
-       ;; call the handler function ASAP if wait is non-nil
-       (not (ipy-tq-queue-head-waitp tq))
-       (ipy-tq-call-handler tq)))
+  (ipy-tq--proc-send-input (ipy-tq-proc tq)
+                           (ipy-tq-queue-head-input tq))
+  ;; call the handler function ASAP if wait is non-nil
+  (when (not (ipy-tq-queue-head-waitp tq))
+    (ipy-tq-call-handler tq)))
 
 (defun ipy-tq-queue-head-kill-temp-buffer (tq)
   "Kill temporary output buffer if TQ queue head waitp is non-nil."
