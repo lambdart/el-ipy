@@ -37,49 +37,29 @@
 (require 'ipy-tq)
 (require 'ipy-proc)
 (require 'ipy-util)
-(require 'ipy-apropos)
 
-(defvar ipy-completions '())
-(defvar ipy-completion-thing nil)
-(defvar ipy-completion-handler-ends nil)
+(defvar ipy-completion-list '()
+  "Cached completion at point list.")
 
-(defun ipy-completion--append-clean-ns (collection)
-  "Append COLLECTION after name space cleanup."
-  (append
-   (mapcar (lambda (x)
-             (replace-regexp-in-string "^.+/" "" x))
-           collection)
-   collection))
+(defvar ipy-completion-thing-at-point '()
+  "Cached completion thing at point (beg end).")
 
 (defun ipy-completion-handler (output-buffer _)
   "Completion OUTPUT-BUFFER handler."
-  (setq ipy-completions
-        (ipy-completion--append-clean-ns
-         (ipy-apropos-collection
-          (ipy-util-buffer-content output-buffer ipy-util-eoc)))))
+  (setq ipy-completion-list
+        (let ((temp (ipy-util-buffer-content output-buffer ipy-util-eoc)))
+          (string-split
+           (string-trim (replace-regexp-in-string "[]['(]" "" temp))
+           "," t "[:blank: ]"))))
 
 (defun ipy-completion-send-cmd ()
   "Send completion command."
   ;; send apropos operation
   (ipy-tq-with-live-process ipy-proc-tq
-    (apply #'ipy-proc-send
-           `(apropos
-             ipy-completion-handler
-             t
-             ""))))
-
-(defun ipy-completion-all-completions ()
-  "Return list of completions."
-  (interactive)
-  (ipy-tq-with-live-process ipy-proc-tq
-    (ipy-tq-eval-after-handler
-        ipy-proc-tq
-        ipy-completion-send-cmd
-      ipy-completions)))
-
-(defun ipy-completion-completions (_input)
-  "Return list of completions."
-  ipy-completions)
+    (let ((input (ipy-util-thing-at-point)))
+      (progn
+        (setq ipy-completion-thing-at-point input)
+        (apply #'ipy-proc-send `(complete nil nil ,@input))))))
 
 (provide 'ipy-completion)
 
