@@ -118,7 +118,7 @@ virtualenv."
 (defun ipy-proc--parse-json-input (input cmd-fmt)
   "Format INPUT (string or region) with CMD-FMT (command format)."
   (let* ((text (if (not (stringp (car input)))
-                   (apply 'buffer-substring-no-properties input)
+                   (apply #'buffer-substring-no-properties input)
                  (car input))))
     (ipy-proc--format-append-eoc
      (format cmd-fmt
@@ -128,11 +128,10 @@ virtualenv."
 (defun ipy-proc--parse-input (input cmd-fmt)
   "Format INPUT (string or region) with CMD-FMT (command format)."
   (ipy-proc--format-append-eoc
-   (apply 'format
-          (append `(,cmd-fmt
-                    ,@(if (not (stringp (car input)))
-                          (list (apply 'buffer-substring-no-properties input))
-                        input))))))
+   (apply #'format `(,cmd-fmt
+                     ,(if (not (stringp (car input)))
+                          (apply #'buffer-substring-no-properties input)
+                        (car input))))))
 
 (defun ipy-proc--ensure-connection ()
   "Return cached transmission queue or create the connection."
@@ -243,8 +242,13 @@ INPUT, the string or the region bounds."
       (:success
        (prog1 ipy-proc-tq
          (ipy-util-log "success: python process created!"
-             (dolist (code ipy-op-code-setup)
-               (ipy-proc-send 'raw nil nil (symbol-value code)))
+             (mapc #'funcall
+                   `((lambda () (ipy-proc-send 'raw nil nil ,ipy-op-eval-setup))
+                     (lambda () (dolist (code ipy-op-code-setup)
+                                  (ipy-proc-send 'eval
+                                                 nil
+                                                 nil
+                                                 (symbol-value code))))))
            ;; run hooks
            (run-hooks 'ipy-proc-hooks)))))))
 
