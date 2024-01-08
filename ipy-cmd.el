@@ -144,6 +144,15 @@
                  nil
                  (format "pydoc.apropos(%S)" input)))
 
+(defun ipy-complete ()
+  "Send complete operation."
+  (interactive)
+  (ipy-tq-with-live-process ipy-proc-tq
+    (ipy-tq-eval-after-handler
+        ipy-proc-tq
+        ipy-completion-send-cmd
+      ipy-completion-list)))
+
 (defun ipy-list-modules ()
   "List all modules."
   (interactive)
