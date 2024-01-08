@@ -90,7 +90,7 @@ If FORCE is non-nill always force the message STRING."
   "Read string using minibuffer.
 THING, non-nil means grab thing at point (default).
 PROMPT, non-nil means minibuffer prompt."
-  (let ((def (ipy-util-thing-at-point thing)))
+  (let ((def (ipy-util-string-at-point thing)))
     (list (read-string
            (apply 'format `(,(if (not thing)
                                  "%s: "
@@ -121,7 +121,20 @@ PROMPT, non-nil means minibuffer prompt."
         (cons (point)
               (point)))))
 
-(defun ipy-util-thing-at-point (&optional thing)
+(defun ipy-util-thing-at-point ()
+  "Return `(BEG END THING) at point."
+  (interactive)
+  (let* ((bounds (if (use-region-p)
+                     (cons (region-beginning) (region-end))
+                   (or (bounds-of-thing-at-point 'symbol)
+                       (bounds-of-thing-at-point 'word)
+                       (cons (point) (point)))))
+         (beg (or (car-safe bounds) (point)))
+         (end (or (cdr-safe bounds) (point))))
+    ;; return the thing at point
+    (list beg end)))
+
+(defun ipy-util-string-at-point (&optional thing)
   "Return THING at point.
 See the documentation of `thing-at-point' to understand what
 thing means."
