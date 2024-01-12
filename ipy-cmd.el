@@ -34,6 +34,7 @@
 ;;
 ;;; Code:
 
+(require 'python)
 (require 'ipy-proc)
 (require 'ipy-completion)
 
@@ -43,17 +44,36 @@
   ;; eval string symbolic expression
   (ipy-proc-send 'raw nil nil str))
 
-(defun ipy-eval-last-sexp ()
-  "Send the previous sexp to the inferior process."
+(defun ipy-eval-last-statement ()
+  "Send the previous statement to the inferior process."
   (interactive)
-  ;; send region of the last expression
-  (ipy-proc-send 'eval-last-sexp
-                 nil
-                 t
-                 (save-excursion
-                   (backward-sexp)
-                   (point))
-                 (point)))
+  ;; send region of the last statement
+  (save-excursion
+    (ipy-proc-send 'eval-last-sexp
+                   nil
+                   t
+                   (python-nav-beginning-of-statement)
+                   (python-nav-end-of-statement))))
+
+(defun ipy-eval-defun ()
+  "Send the previous function definition to the inferior process."
+  (interactive)
+  (let ((start-point (point)))
+    (save-excursion
+      (ipy-proc-send 'eval-last-sexp
+                     nil
+                     t
+                     (progn
+                       (end-of-line 1)
+                       (while (and (or (python-nav-beginning-of-defun)
+                                       (beginning-of-line 1))
+                                   (> (current-indentation) 0)))
+                       (point))
+                     (progn
+                       (goto-char start-point)
+                       (or (python-nav-end-of-defun)
+                           (end-of-line 1))
+                       (point))))))
 
 (defun ipy-eval-region (beg end)
   "Eval BEG/END region."
@@ -81,12 +101,12 @@
 (defun ipy--eval-file-or-buffer (filename)
   "Copy FILENAME contents and eval the temporary buffer."
   (setq ipy-util-prev-l/c-dir/file
-        (let ((fname (expand-file-name filename)))
+        (let ((filename (expand-file-name filename)))
           ;; the user is queried to see if he wants to save
           ;; the buffer before proceeding with the load or compile
-          (ipy-util-save-buffer fname)
+          (ipy-util-save-buffer filename)
           ;; get or create the file buffer
-          (let ((buffer (get-file-buffer fname)))
+          (let ((buffer (get-file-buffer filename)))
             (if buffer
                 (ipy-eval-buffer buffer)
               ;; insert buffer contents and call eval buffer operation
@@ -94,8 +114,8 @@
                 (insert-file-contents-literally filename)
                 (ipy-eval-current-buffer)))
             ;; cache previous directory/filename
-            (cons (file-name-directory fname)
-                  (file-name-nondirectory fname))))))
+            (cons (file-name-directory filename)
+                  (file-name-nondirectory filename))))))
 
 (defun ipy-eval-file (filename)
   "Evaluate target FILENAME content."
@@ -172,7 +192,7 @@
           (buffer-list))
     ;; show message
     (and (> counter 0)
-         (message ipy-util-kill-buffer-msg-fmt counter))))
+         (message ipy-util-kill-buffer-message counter))))
 
 (provide 'ipy-cmd)
 
