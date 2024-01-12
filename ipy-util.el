@@ -46,7 +46,7 @@
 (defvar ipy-util-buffer-name-regex "\\*ipy-proc-output\\*.*$"
   "Default output buffer regex.")
 
-(defvar ipy-util-kill-buffer-msg-fmt
+(defvar ipy-util-kill-buffer-message
   "[IPY]: %d buffers were killed!"
   "Default kill message format.")
 
