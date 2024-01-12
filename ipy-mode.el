@@ -48,7 +48,8 @@
                    map
                    (kbd (car pair))
                    (cdr pair)))
-          `(("C-c C-e" ipy-eval-last-sexp)
+          `(("C-c C-n" ipy-eval-defun)
+            ("C-c C-e" ipy-eval-last-statement)
             ("C-c C-r" ipy-eval-region)
             ("C-c C-c" ipy-eval-current-buffer)
             ("C-c C-b" ipy-eval-buffer)
@@ -78,7 +79,7 @@
       ["Eval region" ipy-eval-region t]
       ["Eval buffer" ipy-eval-current-buffer t]
       ["Eval function" ipy-eval-defn t]
-      ["Eval last sexp" ipy-eval-last-sexp t]
+      ["Eval last statement" ipy-eval-last-statement t]
       "--"
       ["Load file" ipy-load-file t]
       "--"
